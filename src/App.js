@@ -1,25 +1,88 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import {
+  GoogleMap,
+  LoadScript,
+  KmlLayer,
+  Marker,
+} from '@react-google-maps/api';
 
-function App() {
+const containerStyle = {
+  width: '100%',
+  height: '96vh',
+};
+
+const center = {
+  lat: 41.876,
+  lng: -87.624,
+};
+
+const onLoad = (marker) => {
+  console.log('marker: ', marker);
+};
+
+const handleKmlError = (error) => {
+  console.error('KML layer error:', error);
+};
+
+function MyComponent() {
+  const [markers, setMarkers] = useState([]);
+const [kmlData, setKmlData] = useState(
+  'http://45.76.146.132:3100/Hydranty.kml',
+);
+
+  useEffect(() => {
+    const savedMarkers = JSON.parse(localStorage.getItem('markers'));
+    if (savedMarkers) {
+      setMarkers(savedMarkers);
+    }
+  }, []);
+
+  const handleMapClick = (event) => {
+    setMarkers([
+      ...markers,
+      {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    localStorage.setItem('markers', JSON.stringify(markers));
+  }, [markers]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <LoadScript googleMapsApiKey="AIzaSyCHTBblEvzCzdWu2fIIqNjFbbuMhqKGP2k">
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={center}
+        zoom={3}
+        onClick={handleMapClick}
+      >
+        {/* Child components, such as markers, info windows, etc. */}
+        {markers.map((marker, index) => (
+          <Marker key={index} position={marker} onLoad={onLoad} />
+        ))}
+        <KmlLayer
+          url="http://45.76.146.132:3100/Hydranty.kml"
+          // url="https://www.strongmotioncenter.org/map/cosmosVDC.kml"
+          onUnmount={onLoad}
+          onLoad={onLoad}
+          onError={handleKmlError}
+          preserveViewport={true}
+        />
+        {/* <KmlLayer
+          // url="http://45.76.146.132:3100/s1kml.kml"
+          url="https://www.strongmotioncenter.org/map/cosmosVDC.kml"
+          onUnmount={onLoad}
+          onLoad={onLoad}
+          onError={handleKmlError}
+          preserveViewport={true}
+        /> */}
+        {kmlData && <KmlLayer url={kmlData} />}
+      </GoogleMap>
+    </LoadScript>
   );
 }
 
-export default App;
+export default React.memo(MyComponent);
